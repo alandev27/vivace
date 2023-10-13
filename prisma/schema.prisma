@@ -1,0 +1,67 @@
+// // This is your Prisma schema file,
+// // learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures   = ["metrics"]
+
+}
+
+datasource db {
+  provider          = "postgresql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+
+model User {
+  id        Int         @id @default(autoincrement())
+  username  String      @unique
+  email     String      @unique
+  password  String
+  created   DateTime    @default(now())
+  hash      String      @unique @default(uuid())
+  activated Boolean     @default(false)
+  sessions  Session[]
+  root      Folder      @relation(fields: [rootId], references: [id])
+  profile   UserProfile @relation(fields: [profileId], references: [id])
+  rootId    Int
+  profileId Int
+}
+
+model UserProfile {
+  id      Int     @id @default(autoincrement())
+  picture String?
+  bio     String?
+  users   User[]
+}
+
+model Session {
+  id      String   @id @unique @default(uuid())
+  user    User     @relation(fields: [userId], references: [id])
+  init    DateTime @default(now())
+  expires DateTime
+  userId  Int
+}
+
+model Folder {
+  id       Int      @id @default(autoincrement())
+  hash     String   @unique @default(uuid())
+  name     String
+  parentId Int?
+  parent   Folder?  @relation("parent", fields: [parentId], references: [id])
+  folders  Folder[] @relation("parent")
+  created  DateTime @default(now())
+  files    File[]
+  user     User[]
+}
+
+model File {
+  id       Int      @id @default(autoincrement())
+  hash     String   @unique @default(uuid())
+  name     String
+  parent   Folder   @relation(fields: [parentId], references: [id])
+  created  DateTime @default(now())
+  size     Int
+  type     String
+  parentId Int
+}
